@@ -36,6 +36,29 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->btnClear, &QPushButton::clicked,
             this, &MainWindow::clearDisplay);
+
+    connect(ui->btnAdd, &QPushButton::clicked,
+            this, [this]() {
+                inputOperator("+");
+            });
+
+    connect(ui->btnSubtract, &QPushButton::clicked,
+            this, [this]() {
+                inputOperator("-");
+            });
+
+    connect(ui->btnMultiply, &QPushButton::clicked,
+            this, [this]() {
+                inputOperator("*");
+            });
+
+    connect(ui->btnDivide, &QPushButton::clicked,
+            this, [this]() {
+                inputOperator("/");
+            });
+
+    connect(ui->btnEqual, &QPushButton::clicked,
+            this, &MainWindow::calculateResult);
 }
 MainWindow::~MainWindow()
 {
@@ -43,41 +66,127 @@ MainWindow::~MainWindow()
 }
 void MainWindow::inputDigit(const QString &digit)
 {
-    QString text = ui->display->text();
-
-    if (text == "0")
+    if (waitingForSecondOperand)
     {
-        ui->display->setText(digit);
+        currentInput = digit;
+        waitingForSecondOperand = false;
     }
     else
     {
-        ui->display->setText(text + digit);
+        if (currentInput == "0")
+            currentInput = digit;
+        else
+            currentInput += digit;
+    }
+
+    if (currentOperator.isEmpty())
+    {
+        ui->display->setText(currentInput);
+    }
+    else
+    {
+        ui->display->setText(
+            QString::number(firstOperand) + " " +
+            currentOperator + " " +
+            currentInput
+            );
     }
 }
 void MainWindow::inputDecimal()
 {
-    QString text = ui->display->text();
-
-    if (!text.contains('.'))
+    if (waitingForSecondOperand)
     {
-        ui->display->setText(text + ".");
+        currentInput = "0.";
+        waitingForSecondOperand = false;
+    }
+    else if (!currentInput.contains('.'))
+    {
+        currentInput += ".";
+    }
+
+    if (currentOperator.isEmpty())
+    {
+        ui->display->setText(currentInput);
+    }
+    else
+    {
+        ui->display->setText(
+            QString::number(firstOperand) + " " +
+            currentOperator + " " +
+            currentInput
+            );
     }
 }
 void MainWindow::backspace()
 {
-    QString text = ui->display->text();
-
-    if (text.length() > 1)
+    if (resultDisplayed)
     {
-        text.chop(1);
-        ui->display->setText(text);
+        clearDisplay();
+        return;
+    }
+
+    if (currentInput.length() > 1)
+    {
+        currentInput.chop(1);
     }
     else
     {
-        ui->display->setText("0");
+        currentInput = "0";
     }
+
+    ui->display->setText(currentInput);
 }
 void MainWindow::clearDisplay()
 {
+    currentInput = "0";
+    firstOperand = 0.0;
+    currentOperator.clear();
+    waitingForSecondOperand = false;
+    resultDisplayed = false;
+
     ui->display->setText("0");
+}
+void MainWindow::inputOperator(const QString &op)
+{
+    firstOperand = currentInput.toDouble();
+    currentOperator = op;
+    waitingForSecondOperand = true;
+
+    ui->display->setText(
+        currentInput + " " + currentOperator
+        );
+}
+void MainWindow::calculateResult()
+{
+    if (currentOperator.isEmpty() || waitingForSecondOperand)
+        return;
+
+    double secondOperand = currentInput.toDouble();
+    double result = 0.0;
+
+    if (currentOperator == "+")
+    {
+        result = firstOperand + secondOperand;
+    }
+    else if (currentOperator == "-")
+    {
+        result = firstOperand - secondOperand;
+    }
+    else if (currentOperator == "*")
+    {
+        result = firstOperand * secondOperand;
+    }
+    else if (currentOperator == "/")
+    {
+        result = firstOperand / secondOperand;
+    }
+
+    currentInput = QString::number(result);
+
+    ui->display->setText(currentInput);
+
+    firstOperand = result;
+    currentOperator.clear();
+    waitingForSecondOperand = false;
+    resultDisplayed = true;
 }

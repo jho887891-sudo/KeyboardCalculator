@@ -25,6 +25,15 @@ private:
     void inputDecimal();
     void backspace();
     void clearDisplay();
+
+    void inputOperator(const QString &op);
+    void calculateResult();
+
+    double firstOperand = 0.0;
+    QString currentOperator;
+    bool waitingForSecondOperand = false;
+    QString currentInput = "0";
+    bool resultDisplayed = false;
 };
 
 #endif // MAINWINDOW_H
