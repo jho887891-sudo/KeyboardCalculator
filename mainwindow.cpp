@@ -7,6 +7,16 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setFocusPolicy(Qt::StrongFocus);
+
+    for (QPushButton *button : findChildren<QPushButton *>())
+    {
+        button->setFocusPolicy(Qt::NoFocus);
+    }
+
+    ui->display->setFocusPolicy(Qt::NoFocus);
+    setFocus();
+
     QPushButton *digitButtons[] = {
         ui->btn0,
         ui->btn1,
@@ -269,4 +279,73 @@ bool MainWindow::compute(double secondOperand, double &result)
     }
 
     return true;
+}
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    int key = event->key();
+
+    // 数字 0~9
+    if (key >= Qt::Key_0 && key <= Qt::Key_9)
+    {
+        inputDigit(QString::number(key - Qt::Key_0));
+        return;
+    }
+
+    // 小数点
+    if (key == Qt::Key_Period)
+    {
+        inputDecimal();
+        return;
+    }
+
+    // 四则运算
+    if (key == Qt::Key_Plus)
+    {
+        inputOperator("+");
+        return;
+    }
+
+    if (key == Qt::Key_Minus)
+    {
+        inputOperator("-");
+        return;
+    }
+
+    if (key == Qt::Key_Asterisk)
+    {
+        inputOperator("*");
+        return;
+    }
+
+    if (key == Qt::Key_Slash)
+    {
+        inputOperator("/");
+        return;
+    }
+
+    // 等号、Enter
+    if (key == Qt::Key_Equal ||
+        key == Qt::Key_Return ||
+        key == Qt::Key_Enter)
+    {
+        calculateResult();
+        return;
+    }
+
+    // 退格
+    if (key == Qt::Key_Backspace)
+    {
+        backspace();
+        return;
+    }
+
+    // C 或 Esc 清除
+    if (key == Qt::Key_C ||
+        key == Qt::Key_Escape)
+    {
+        clearDisplay();
+        return;
+    }
+
+    QMainWindow::keyPressEvent(event);
 }
