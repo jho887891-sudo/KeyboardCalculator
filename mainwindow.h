@@ -28,6 +28,7 @@ private:
 
     void inputOperator(const QString &op);
     void calculateResult();
+    bool compute(double secondOperand, double &result);
 
     double firstOperand = 0.0;
     QString currentOperator;

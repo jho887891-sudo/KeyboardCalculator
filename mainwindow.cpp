@@ -66,6 +66,14 @@ MainWindow::~MainWindow()
 }
 void MainWindow::inputDigit(const QString &digit)
 {
+    if (resultDisplayed && currentOperator.isEmpty())
+    {
+        currentInput = digit;
+        resultDisplayed = false;
+        ui->display->setText(currentInput);
+        return;
+    }
+
     if (waitingForSecondOperand)
     {
         currentInput = digit;
@@ -94,6 +102,14 @@ void MainWindow::inputDigit(const QString &digit)
 }
 void MainWindow::inputDecimal()
 {
+    if (resultDisplayed && currentOperator.isEmpty())
+    {
+        currentInput = "0.";
+        resultDisplayed = false;
+        ui->display->setText(currentInput);
+        return;
+    }
+
     if (waitingForSecondOperand)
     {
         currentInput = "0.";
@@ -148,12 +164,50 @@ void MainWindow::clearDisplay()
 }
 void MainWindow::inputOperator(const QString &op)
 {
-    firstOperand = currentInput.toDouble();
+    if (currentOperator.isEmpty())
+    {
+        firstOperand = currentInput.toDouble();
+    }
+    else if (waitingForSecondOperand)
+    {
+
+        currentOperator = op;
+
+        ui->display->setText(
+            QString::number(firstOperand) + " " +
+            currentOperator
+            );
+
+        return;
+    }
+    else
+    {
+        double secondOperand = currentInput.toDouble();
+        double result = 0.0;
+
+        if (!compute(secondOperand, result))
+        {
+            ui->display->setText("Error");
+
+            currentInput = "0";
+            firstOperand = 0.0;
+            currentOperator.clear();
+            waitingForSecondOperand = false;
+            resultDisplayed = true;
+            return;
+        }
+
+        firstOperand = result;
+        currentInput = QString::number(result);
+    }
+
     currentOperator = op;
     waitingForSecondOperand = true;
+    resultDisplayed = false;
 
     ui->display->setText(
-        currentInput + " " + currentOperator
+        QString::number(firstOperand) + " " +
+        currentOperator
         );
 }
 void MainWindow::calculateResult()
@@ -164,6 +218,30 @@ void MainWindow::calculateResult()
     double secondOperand = currentInput.toDouble();
     double result = 0.0;
 
+    if (!compute(secondOperand, result))
+    {
+        ui->display->setText("Error");
+
+        currentInput = "0";
+        firstOperand = 0.0;
+        currentOperator.clear();
+        waitingForSecondOperand = false;
+        resultDisplayed = true;
+
+        return;
+    }
+
+    currentInput = QString::number(result);
+
+    ui->display->setText(currentInput);
+
+    firstOperand = result;
+    currentOperator.clear();
+    waitingForSecondOperand = false;
+    resultDisplayed = true;
+}
+bool MainWindow::compute(double secondOperand, double &result)
+{
     if (currentOperator == "+")
     {
         result = firstOperand + secondOperand;
@@ -178,15 +256,17 @@ void MainWindow::calculateResult()
     }
     else if (currentOperator == "/")
     {
+        if (secondOperand == 0.0)
+        {
+            return false;
+        }
+
         result = firstOperand / secondOperand;
     }
+    else
+    {
+        return false;
+    }
 
-    currentInput = QString::number(result);
-
-    ui->display->setText(currentInput);
-
-    firstOperand = result;
-    currentOperator.clear();
-    waitingForSecondOperand = false;
-    resultDisplayed = true;
+    return true;
 }
